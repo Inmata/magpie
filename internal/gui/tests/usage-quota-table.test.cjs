@@ -34,6 +34,10 @@ const quotas = [
   { provider: "codex", name: "Codex", kind: "subscription", icon: "codex-color", plan: "Pro", user: "l@example.com", windows: [w("5 hours", 0, 5), w("7 days", 0, 160)] },
   { provider: "claude", name: "Claude Code", kind: "subscription", icon: "claude-color", plan: "Pro", user: "m@example.com", windows: [w("5 hours", 12, 4), w("7 days", 25, 100)] },
   { provider: "kimi", name: "Kimi", icon: "kimi", user: "n@example.com", windows: [w("Weekly", 77, 70)] },
+  { provider: "agy-cli", name: "agy-cli", icon: "antigravity-color", user: "demo@example.com", windows: [
+    w("Gemini · 7 days", 60, 90), w("Gemini · 5 hours", 34, 2),
+    w("Claude & GPT · 7 days", 10, 90), w("Claude & GPT · 5 hours", 12, 2),
+    w("Gemini 4 Argon · 7 days", 20, 90)] },
 ];
 
 function serve(lang, left) {
@@ -84,10 +88,15 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator("#subscriptionUsage .subscription-card").count(), 0);
         // a row a provider, its several accounts folded under it (#6740)
         const accounts = quotas.length;
-        assert.equal(await page.locator(".qt tbody tr").count(), 7);
+        assert.equal(await page.locator(".qt tbody tr").count(), 8);
         assert.equal(await page.locator(".qt tbody tr.qt-group").count(), 3);
         const heads = await page.$$eval(".qt thead th", (ths) => ths.map((x) => x.textContent.trim()));
         assert.equal(heads.length, 2 + 4 + 1, `${heads}`);
+        const agy = page.locator(".qt tbody tr", { hasText: "agy-cli" });
+        assert.equal(await agy.locator("td.qt-w").nth(0).locator(".qt-win").count(), 2, "scoped 5-hour windows share the 5-hour column");
+        assert.equal(await agy.locator("td.qt-w").nth(1).locator(".qt-win").count(), 3, "scoped weekly windows share the weekly column");
+        assert.match(await agy.locator("td.qt-w").nth(0).innerText(), /Gemini.*Claude & GPT/s, "each pool keeps its label");
+        assert.equal(await agy.locator(".qt-other .qt-win").count(), 0, "known periods do not overflow into Other");
         // the cards' figures, the same readings
         const nth = (n) => page.$eval(`.qt tbody tr:nth-child(${n})`, (tr) => tr.innerText.replace(/\s+/g, " "));
         // Codex's five accounts: their windows' mean share

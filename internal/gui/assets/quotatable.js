@@ -41,8 +41,10 @@ const spanOf = (name) => {
 // columnOf: the column a window goes in, its key and its head
 function columnOf(w) {
   if (w.window && w.pool) { const f = poolWord(w.pool); return { key: "n:" + f, head: f }; }
-  const h = spanOf(w.name);
-  return h < Infinity ? { key: "s:" + h, head: w.name } : { key: "n:" + w.name, head: w.name };
+  // Plugins may scope a period by model group, e.g. "Gemini · 5 hours".
+  const period = (w.name || "").split(" · ").at(-1);
+  const h = spanOf(period);
+  return h < Infinity ? { key: "s:" + h, head: period } : { key: "n:" + w.name, head: w.name };
 }
 
 // a window's cell: its share and bar, and when it starts again
