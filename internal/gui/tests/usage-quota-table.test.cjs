@@ -37,7 +37,7 @@ const quotas = [
   { provider: "agy-cli", name: "agy-cli", icon: "antigravity-color", user: "demo@example.com", windows: [
     w("Gemini · 7 days", 60, 90), w("Gemini · 5 hours", 34, 2),
     w("Claude & GPT · 7 days", 10, 90), w("Claude & GPT · 5 hours", 12, 2),
-    w("Gemini 4 Argon · 7 days", 20, 90)] },
+    { ...w("7 days", 20, 90), pool: "Gemini 4 Argon" }] },
 ];
 
 function serve(lang, left) {

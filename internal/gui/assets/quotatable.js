@@ -86,8 +86,15 @@ function quotaTable(subs) {
   const headOf = (k) => [...heads.get(k)].sort(([x, a], [y, b]) => b - a || /^\d/.test(y) - /^\d/.test(x))[0][0];
   const names = [...count.keys()].map((n, i) => [n, i]).sort(([a, i], [b, j]) => count.get(b) - count.get(a) || i - j).slice(0, TABLE_WINDOWS)
     .sort(([a, i], [b, j]) => spanOf(headOf(a)) - spanOf(headOf(b)) || i - j).map(([n]) => n);
-  const inCol = (ws, k) => ws.filter((w) => columnOf(w).key === k);
-  const extra = (r) => r.ws.filter((w) => !names.includes(columnOf(w).key));
+  // When a pool has no family column, its windows still fit any visible
+  // period columns. Keep the family column first when the table has one.
+  const visibleKey = (w) => {
+    const key = columnOf(w).key;
+    if (w.window && w.pool && !names.includes(key)) return "s:" + spanOf(w.window);
+    return key;
+  };
+  const inCol = (ws, k) => ws.filter((w) => visibleKey(w) === k);
+  const extra = (r) => r.ws.filter((w) => !names.includes(visibleKey(w)));
   const bare = (r) => r.sub.balance && !r.ws.length && !r.sub.error; // a balance and no window
   const more = rows.some((r) => extra(r).length || (r.sub.balance && r.ws.length)) || (!names.length && rows.some(bare));
   const value = (r, key) => key === "sub" ? quotaName(r.sub).toLowerCase()
